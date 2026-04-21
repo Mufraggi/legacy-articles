@@ -1,8 +1,8 @@
+from datetime import datetime
+
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-from bson import ObjectId
-from datetime import datetime
 
 from app.database import db
 
@@ -12,8 +12,8 @@ router = APIRouter(prefix="/customers", tags=["customers"])
 class CreateCustomerRequest(BaseModel):
     name: str
     email: str
-    phone: Optional[str] = None
-    address: Optional[str] = None
+    phone: str | None = None
+    address: str | None = None
 
 
 @router.post("")
@@ -38,8 +38,8 @@ async def create_customer(customer: CreateCustomerRequest):
 async def get_customer(customer_id: str):
     try:
         customer = db.customers.find_one({"_id": ObjectId(customer_id)})
-    except:
-        raise HTTPException(status_code=400, detail="invalid customer id")
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid customer id") from None
 
     if not customer:
         raise HTTPException(status_code=404, detail="customer not found")
@@ -52,8 +52,8 @@ async def get_customer(customer_id: str):
 async def get_customer_orders(customer_id: str):
     try:
         customer = db.customers.find_one({"_id": ObjectId(customer_id)})
-    except:
-        raise HTTPException(status_code=400, detail="invalid customer id")
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid customer id") from None
 
     if not customer:
         raise HTTPException(status_code=404, detail="customer not found")

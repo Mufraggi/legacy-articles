@@ -1,6 +1,7 @@
-from datetime import datetime
 import random
 import string
+
+from bson import ObjectId
 
 # general utility functions
 # copied from stackoverflow mostly, cleaned up a bit
@@ -48,7 +49,6 @@ def is_valid_object_id(id_str: str) -> bool:
     """check if a string is a valid mongodb objectid"""
     # copied from stackoverflow
     try:
-        from bson import ObjectId
         ObjectId(id_str)
         return True
     except Exception:

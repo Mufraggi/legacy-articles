@@ -14,6 +14,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 # --- models ---
 # started with camelCase because I was doing a lot of JS before this
 
+
 class OrderItem(BaseModel):
     productId: str
     quantity: int
@@ -33,6 +34,7 @@ class UpdateStatusRequest(BaseModel):
 
 # --- helpers ---
 
+
 def serialize_doc(doc):
     if doc is None:
         return None
@@ -41,6 +43,7 @@ def serialize_doc(doc):
 
 
 # --- routes ---
+
 
 @router.post("")
 async def create_order(order: CreateOrderRequest):
@@ -79,7 +82,7 @@ async def create_order(order: CreateOrderRequest):
         if product.get("stock", 0) < item["quantity"]:
             raise HTTPException(
                 status_code=400,
-                detail="not enough stock for product " + item["productId"]
+                detail="not enough stock for product " + item["productId"],
             )
 
     # generate order ref
@@ -151,7 +154,7 @@ async def update_order_status(order_id: str, body: UpdateStatusRequest):
     if body.status not in valid_statuses:
         raise HTTPException(
             status_code=400,
-            detail="invalid status, must be one of: " + str(valid_statuses)
+            detail="invalid status, must be one of: " + str(valid_statuses),
         )
 
     # TODO: validate status transition using utils.validate_status_transition
@@ -162,7 +165,7 @@ async def update_order_status(order_id: str, body: UpdateStatusRequest):
     try:
         result = db.orders.update_one(
             {"_id": ObjectId(order_id)},
-            {"$set": {"status": body.status, "updated_at": datetime.utcnow()}}
+            {"$set": {"status": body.status, "updated_at": datetime.utcnow()}},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

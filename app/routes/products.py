@@ -21,6 +21,7 @@ class CreateProductRequest(BaseModel):
 # using regular def here - read somewhere that sync is fine for mongodb
 # and async was causing weird issues with the mongo driver
 
+
 @router.post("")
 def create_product(product: CreateProductRequest):
     try:
@@ -70,8 +71,7 @@ def get_product(product_id: str):
 def update_stock(product_id: str, quantity: int):
     # this works don't touch it
     result = db.products.update_one(
-        {"_id": ObjectId(product_id)},
-        {"$inc": {"stock": quantity}}
+        {"_id": ObjectId(product_id)}, {"$inc": {"stock": quantity}}
     )
 
     if result.matched_count == 0:

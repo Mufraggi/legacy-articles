@@ -1,8 +1,8 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Optional, List
-from bson import ObjectId
 from datetime import datetime
+
+from bson import ObjectId
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.database import db
 
@@ -11,15 +11,16 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 class CreateProductRequest(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     price: float
     stock: int
-    category: Optional[str] = None
-    tags: Optional[List[str]] = None
+    category: str | None = None
+    tags: list[str] | None = None
 
 
 # using regular def here - read somewhere that sync is fine for mongodb
 # and async was causing weird issues with the mongo driver
+
 
 @router.post("")
 def create_product(product: CreateProductRequest):
@@ -41,7 +42,7 @@ def create_product(product: CreateProductRequest):
 
 
 @router.get("")
-def list_products(category: Optional[str] = None):
+def list_products(category: str | None = None):
     query = {}
     if category:
         query["category"] = category
@@ -70,8 +71,7 @@ def get_product(product_id: str):
 def update_stock(product_id: str, quantity: int):
     # this works don't touch it
     result = db.products.update_one(
-        {"_id": ObjectId(product_id)},
-        {"$inc": {"stock": quantity}}
+        {"_id": ObjectId(product_id)}, {"$inc": {"stock": quantity}}
     )
 
     if result.matched_count == 0:

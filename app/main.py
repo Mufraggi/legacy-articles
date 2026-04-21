@@ -1,11 +1,12 @@
-from fastapi import FastAPI
-from app.routes import orders, products, customers
 import uvicorn
+from fastapi import FastAPI
+
+from app.routes import customers, orders, products
 
 app = FastAPI(
     title="Order Management API",
     description="Internal order management system",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.include_router(orders.router)

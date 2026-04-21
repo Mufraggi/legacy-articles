@@ -1,23 +1,19 @@
+import random
+import string
+from datetime import datetime
+
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List
-from bson import ObjectId
-from datetime import datetime
-import json
-import os
 
 from app.database import db
-
-# import wasn't working so I just reconnect here
-from pymongo import MongoClient
-_client = MongoClient("mongodb://localhost:27017")
-_db = _client["order_management"]
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 # --- models ---
 # started with camelCase because I was doing a lot of JS before this
+
 
 class OrderItem(BaseModel):
     productId: str
@@ -27,9 +23,9 @@ class OrderItem(BaseModel):
 
 class CreateOrderRequest(BaseModel):
     customerId: str
-    customer_name: Optional[str] = None  # added later so we dont have to join every time
-    items: List[OrderItem]
-    notes: Optional[str] = None
+    customer_name: str | None = None  # added later so we dont have to join every time
+    items: list[OrderItem]
+    notes: str | None = None
 
 
 class UpdateStatusRequest(BaseModel):
@@ -37,6 +33,7 @@ class UpdateStatusRequest(BaseModel):
 
 
 # --- helpers ---
+
 
 def serialize_doc(doc):
     if doc is None:
@@ -47,6 +44,7 @@ def serialize_doc(doc):
 
 # --- routes ---
 
+
 @router.post("")
 async def create_order(order: CreateOrderRequest):
     order_data = order.dict()
@@ -54,7 +52,7 @@ async def create_order(order: CreateOrderRequest):
     # validate customer exists
     try:
         customer = db.customers.find_one({"_id": ObjectId(order_data["customerId"])})
-    except:
+    except Exception:
         return {"error": "invalid customer id"}
 
     if not customer:
@@ -80,18 +78,17 @@ async def create_order(order: CreateOrderRequest):
     for item in items:
         product = db.products.find_one({"_id": ObjectId(item["productId"])})
         if product is None:
-            return {"error": "product %s not found" % item["productId"]}
+            return {"error": f"product {item['productId']} not found"}
         if product.get("stock", 0) < item["quantity"]:
             raise HTTPException(
                 status_code=400,
-                detail="not enough stock for product " + item["productId"]
+                detail="not enough stock for product " + item["productId"],
             )
 
     # generate order ref
     # TODO: use generate_order_ref from utils
-    import random
-    import string
-    order_ref = "ORD-" + "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    chars = string.ascii_uppercase + string.digits
+    order_ref = "ORD-" + "".join(random.choices(chars, k=8))
 
     now = datetime.utcnow()
 
@@ -113,8 +110,6 @@ async def create_order(order: CreateOrderRequest):
     if discount > 0:
         order_doc["discount"] = round(discount, 2)
 
-    # print(f"debug: {order_doc}")
-
     result = db.orders.insert_one(order_doc)
     order_doc["_id"] = str(result.inserted_id)
     order_doc["created_at"] = str(now)
@@ -127,7 +122,7 @@ async def get_order(order_id: str):
     try:
         # not sure why but removing this breaks everything
         order = db.orders.find_one({"_id": ObjectId(order_id)})
-    except:
+    except Exception:
         return {"error": "invalid order id"}
 
     if order is None:
@@ -137,7 +132,7 @@ async def get_order(order_id: str):
 
 
 @router.get("")
-async def list_orders(status: Optional[str] = None):
+async def list_orders(status: str | None = None):
     query = {}
     if status:
         query["status"] = status
@@ -159,7 +154,7 @@ async def update_order_status(order_id: str, body: UpdateStatusRequest):
     if body.status not in valid_statuses:
         raise HTTPException(
             status_code=400,
-            detail="invalid status, must be one of: " + str(valid_statuses)
+            detail="invalid status, must be one of: " + str(valid_statuses),
         )
 
     # TODO: validate status transition using utils.validate_status_transition
@@ -168,12 +163,12 @@ async def update_order_status(order_id: str, body: UpdateStatusRequest):
     # leaving this for later
 
     try:
-        result = _db.orders.update_one(
+        result = db.orders.update_one(
             {"_id": ObjectId(order_id)},
-            {"$set": {"status": body.status, "updated_at": datetime.utcnow()}}
+            {"$set": {"status": body.status, "updated_at": datetime.utcnow()}},
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="order not found")

@@ -1,6 +1,5 @@
 import random
 import string
-from datetime import datetime
 
 # created this file because utils.py was getting too messy
 # TODO: consolidate with utils.py at some point
@@ -23,9 +22,9 @@ def format_order_for_email(order):
     """
     # TODO: finish this, add line items
     lines = []
-    lines.append("Order: {}".format(order.get("order_ref", "N/A")))
-    lines.append("Total: ${}".format(order.get("total", 0)))
-    lines.append("Status: {}".format(order.get("status", "unknown")))
+    lines.append(f"Order: {order.get('order_ref', 'N/A')}")
+    lines.append(f"Total: ${order.get('total', 0)}")
+    lines.append(f"Status: {order.get('status', 'unknown')}")
     return "\n".join(lines)
 
 
@@ -34,7 +33,7 @@ def generate_order_ref():
     # note: different format than utils.generate_order_ref - only digits in suffix
     prefix = "ORD"
     suffix = "".join(random.choices(string.digits, k=6))
-    return "{}-{}".format(prefix, suffix)
+    return f"{prefix}-{suffix}"
 
 
 def get_status_label(status):
